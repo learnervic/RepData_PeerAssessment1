@@ -1,0 +1,79 @@
+---
+title: "PA1_template.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+#Code for reading in the dataset and/or processing the data
+echo = TRUE
+getwd()
+
+
+full_data <- read.csv("activity.csv", header = TRUE)
+
+# Histogram of the total number of steps taken each day
+steps_each_day <- aggregate(steps ~ date, full_data, sum)
+hist(steps_each_day$steps, breaks = 20,
+     main = paste("Total Number of Steps Taken Each Day")
+     , xlab = "Number of Steps")
+
+#Mean and median number of steps taken each day
+mean_steps <- mean(steps_each_day$steps)
+median_steps <- median(steps_each_day$steps)
+#Calculate and report the mean and median of the total number of steps taken per day
+sprintf("Mean of the steps taken each day %.3f", mean_steps)
+sprintf("Median of the steps taken each day %.3f", median_steps)
+
+
+#Time series plot of the average number of steps taken
+avg_steps_across_all_days <- aggregate(steps ~ interval, full_data, mean)
+plot(avg_steps_across_all_days$interval, avg_steps_across_all_days$steps, type = "l", xlab = "Interval"
+     , ylab = "Average Steps", main = "Average Number of Steps per Day by Interval")
+
+#The 5-minute interval that, on average, contains the maximum number of steps
+max_step_interval <- avg_steps_across_all_days[which.max(avg_steps_across_all_days$steps),1]
+sprintf("Maximum number of steps were taken in interval %d", max_step_interval)
+
+#Code to describe and show a strategy for imputing missing data
+sprintf("Total number of rows with missing values is %d", sum(is.na(full_data)))
+
+
+library(Hmisc)
+## Copy full data into a new data set
+full_data_imputed <- full_data
+full_data_imputed$weekday <- weekdays(as.Date(full_data$date))
+
+## Replacing missing values under steps column with mean of the same column
+full_data_imputed$steps <- ave(full_data$steps, full_data_imputed$weekday,FUN=function(x) ifelse(is.na(x), mean(x,na.rm=TRUE),x))
+
+steps_each_day_imputed <- aggregate(steps ~ date, full_data_imputed, sum)
+
+#Histogram of the total number of steps taken each day after missing values are imputed
+hist(steps_each_day_imputed$steps, breaks = 20, col = 'red' 
+     ,main = paste("Total Number of Steps Taken Each Day"), xlab = "Number of Steps", ylim = c(0,20))
+
+
+hist(steps_each_day$steps, breaks = 20, col = 'red', main = paste("Total Number of Steps Taken Each Day"), 
+     xlab = "Number of Steps", add=T)
+legend("topright", c("Imputed", "Non-imputed"), col=c("blue", "red"),lwd = 10)
+
+mean_steps_imputed <- mean(steps_each_day_imputed$steps)
+median_steps_imputed <- median(steps_each_day_imputed$steps)
+
+comparison_table <- matrix(c(mean_steps, mean_steps_imputed, median_steps, median_steps_imputed), ncol = 2, byrow = TRUE)
+
+#Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+colnames(comparison_table) <- c("Original", "Imputed")
+rownames(comparison_table) <- c("mean", "median")
+full_data_imputed$weekend_factor <- ifelse(weekdays(as.Date(full_data_imputed$date)) %in%
+                                             c("Saturday", "Sunday"), "weekend", "weekday")
+panel_plot <- aggregate(steps ~ interval + weekend_factor, data = full_data_imputed, mean)
+library(ggplot2)
+ggplot(panel_plot, aes(interval, steps)) + geom_line() + facet_grid(weekend_factor ~ .) 
++ xlab("5 min Interval") + ylab("Average Steps") + ggtitle("Weekdays vs. Weekends Average Steps Pattern") + 
+  theme(plot.title = element_text(hjust = 0.5))
