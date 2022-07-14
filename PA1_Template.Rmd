@@ -17,23 +17,23 @@ getwd()
 full_data <- read.csv("activity.csv", header = TRUE)
 
 # Histogram of the total number of steps taken each day
-steps_each_day <- aggregate(steps ~ date, full_data, sum)
-hist(steps_each_day$steps, breaks = 20,
-     main = paste("Total Number of Steps Taken Each Day")
+steps_per_day <- aggregate(steps ~ date, full_data, sum)
+hist(steps_per_day$steps, breaks = 20,
+     main = paste("Total Number of Steps Per Day")
      , xlab = "Number of Steps")
 
 #Mean and median number of steps taken each day
 mean_steps <- mean(steps_each_day$steps)
 median_steps <- median(steps_each_day$steps)
 #Calculate and report the mean and median of the total number of steps taken per day
-sprintf("Mean of the steps taken each day %.3f", mean_steps)
-sprintf("Median of the steps taken each day %.3f", median_steps)
+sprintf("Mean of the steps taken each day %.1f", mean_steps)
+sprintf("Median of the steps taken each day %.1f", median_steps)
 
 
 #Time series plot of the average number of steps taken
-avg_steps_across_all_days <- aggregate(steps ~ interval, full_data, mean)
-plot(avg_steps_across_all_days$interval, avg_steps_across_all_days$steps, type = "l", xlab = "Interval"
-     , ylab = "Average Steps", main = "Average Number of Steps per Day by Interval")
+avg_stepss <- aggregate(steps ~ interval, full_data, mean)
+plot(avg_steps$interval, avg_steps$steps, type = "l", xlab = "Interval"
+     , ylab = "Average Steps", main = "Average Number of Steps per Day")
 
 #The 5-minute interval that, on average, contains the maximum number of steps
 max_step_interval <- avg_steps_across_all_days[which.max(avg_steps_across_all_days$steps),1]
@@ -45,17 +45,15 @@ sprintf("Total number of rows with missing values is %d", sum(is.na(full_data)))
 
 library(Hmisc)
 ## Copy full data into a new data set
-full_data_imputed <- full_data
-full_data_imputed$weekday <- weekdays(as.Date(full_data$date))
+activity <- full_data
+activity$weekday <- weekdays(as.Date(full_data$date))
+activity[is.na(steps), "steps"] <- activityDT[, c(lapply(.SD, median, na.rm = TRUE)), .SDcols = c("steps")]
 
-## Replacing missing values under steps column with mean of the same column
-full_data_imputed$steps <- ave(full_data$steps, full_data_imputed$weekday,FUN=function(x) ifelse(is.na(x), mean(x,na.rm=TRUE),x))
-
-steps_each_day_imputed <- aggregate(steps ~ date, full_data_imputed, sum)
+steps_activity<- aggregate(steps ~ date, activity, sum)
 
 #Histogram of the total number of steps taken each day after missing values are imputed
-hist(steps_each_day_imputed$steps, breaks = 20, col = 'red' 
-     ,main = paste("Total Number of Steps Taken Each Day"), xlab = "Number of Steps", ylim = c(0,20))
+hist(steps_activity$steps, breaks = 20, col = 'red' 
+     ,main = paste("Total Number of Steps perh Day"), xlab = "Number of Steps", ylim = c(0,20))
 
 
 hist(steps_each_day$steps, breaks = 20, col = 'red', main = paste("Total Number of Steps Taken Each Day"), 
